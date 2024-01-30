@@ -1,0 +1,45 @@
+name: Packaging and Release
+
+on:
+  # schedule:
+  #   - cron: '0 3 * * *' # 每天凌晨 3 点执行
+  [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get latest tag
+        id: latest_tag
+        run: echo "::set-output name=tag::$(git describe --abbrev=0 --tags)"
+
+      - name: Increment version number
+        id: semver
+        uses: anothrNick/github-tag-action@v1.8.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_prefix: v
+          release_branches: main
+
+      - name: Package files
+        run: npm run package
+
+      - name: Create release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.semver.outputs.new_tag }}
+          release_name: Release ${{ steps.semver.outputs.new_version }}
+          draft: false
+          prerelease: false
