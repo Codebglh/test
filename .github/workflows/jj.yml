@@ -27,10 +27,10 @@ jobs:
 
       - name: Increment version number
         id: semver
-        uses: anothrNick/github-tag-action@v1.64.0
-        with:
-          github_token: ${{ secrets.HHHSSS}}
-          tag_prefix: v
+        uses: anothrNick/github-tag-action@1.64.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.HHHSSS}}
+          WITH_V: true
           PRERELEASE: true
 
       - name: Package files
