@@ -1,16 +1,15 @@
-name: Packaging and Release
+name: Auto Release
 
 on:
-  # schedule:
-  #   - cron: '0 3 * * *' # 每天凌晨 3 点执行
-  [push]
+  schedule:
+    - cron: '0 0 * * *' # 每天 UTC 00:00 执行
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v2
 
       - name: Set up Node.js
@@ -18,28 +17,31 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Dependencies
+        run: npm install
 
-      - name: Get latest tag
-        id: latest_tag
-        run: echo "::set-output name=tag::$(git describe --abbrev=0 --tags)"
+      - name: Build
+        run: npm run build
 
-      - name: Increment version number
-        id: semver
-        uses: anothrNick/github-tag-action@1.64.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.HHHSSS}}
-          WITH_V: true
-          PRERELEASE: true
-
-      - name: Package files
-        run: npm run package
-
-      - name: Create release
+      - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.semver.outputs.new_tag }}
-          release_name: Release ${{ steps.semver.outputs.new_version }}
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Automatic release triggered by GitHub Actions.
           draft: false
           prerelease: false
+
+      - name: Upload Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.HHHSSS }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./
+          asset_name: asset.zip
+          asset_content_type: application/zip
